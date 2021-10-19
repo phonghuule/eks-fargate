@@ -169,7 +169,8 @@ and you should see output similar to what is shown below:
 Notice that the profile includes the private subnets in your EKS cluster. **Pods running on Fargate are not assigned public IP addresses, so only private subnets (with no direct route to an Internet Gateway) are supported when you create a Fargate profile.** Hence, while provisioning an EKS cluster, you must make sure that the VPC that you create contains one or more private subnets. When you create an EKS cluster with [eksctl](http://eksctl.io/) utility (which is what we used), under the hoods it creates a VPC that meets these requirements.
 
 **Deploying Pods to Fargate**
-Lets look at the content of the nginx-deployment.yaml file before we spin up the pods:
+
+Lets look at the content of the nginx-deployment.yaml file before we spin up the pods, execute the commands below:
 
 ```
 cd ~/environment/eks-fargate
@@ -233,10 +234,9 @@ spec:
     kubectl apply -f nginx-deployment.yaml
 ```
 
-Check Status:
+Check Status (wait till the pods are in *Running* status):
 ```
-    kubectl get pods -n fargate -w
-(wait till the pods are in *Running* status)
+kubectl get pods -n fargate -w
 ```
 The first time the pods start, they do take some time due to the “cold start” of fargate pods. Once the pods are in “Ready” status, you can type “ctrl+c”.
 
@@ -251,23 +251,22 @@ NAME READY STATUS RESTARTS AGE
 nginx-app-57d5474b4b-cjbmq 1/1 Running 0 88s
 nginx-app-57d5474b4b-sf6w7 1/1 Running 0 88s
 ```
-
-```
 -n — Flag indicates you want to see pods in the fargate namespace. 
 If you were to do just ‘kubectl get pods’, you won’t see any pods show up since 
 that’s only looking at pods in the default namespace. 
-```
 
-    
-    $ kubectl get service -n fargate -o wide
-    NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) AGE SELECTOR
-    nginx-svc NodePort 10.100.33.138 <none> 80:30541/TCP 7m7s app=nginx
-    
+```    
+$ kubectl get service -n fargate -o wide
+```
+```
+NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) AGE SELECTOR
+nginx-svc NodePort 10.100.33.138 <none> 80:30541/TCP 7m7s app=nginx
+```    
 
 The deployment for ngnix we deployed creates a service of type NodePort. 
 **Now issue:**
 ```
-    kubectl get nodes
+kubectl get nodes
 ```
 
 What do you see? 
@@ -281,7 +280,6 @@ fargate-ip-192-168-79-85.ec2.internal    Ready    <none>   83s    v1.14.8-eks
 fargate-ip-192-168-81-162.ec2.internal   Ready    <none>   81m    v1.14.8-eks
 fargate-ip-192-168-91-32.ec2.internal    Ready    <none>   81m    v1.14.8-eks
 ```
-
 
 As you notice, now we see 4 nodes show up, 2 for the coredns pods and two for the nginx containers we have spun up. These are merely kubelets from the microVMs in which your NGINX pods are running under Fargate, posing as nodes to the EKS Control Plane. This is how the EKS Control Plane stays aware of the Fargate infrastructure under which the pods it orchestrates are running. There will be a “fargate” node added to the cluster for each pod deployed on Fargate.
 
