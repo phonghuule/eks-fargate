@@ -12,7 +12,7 @@ This lab is provided as part of **[AWS Innovate Modern Applications Edition](htt
 
 In this lab, we will deploy a replica set of NGINX pods on EKS Fargate.
 
-![fig1.png](./setup/images/fig1.png)
+![fig1.png](./images/fig1.png)
 
 ## Setup
 
@@ -22,24 +22,24 @@ In this lab, we will deploy a replica set of NGINX pods on EKS Fargate.
 1. Click [this link](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=EKS-Fargate&templateURL=https://aws-innovate-modern-applications.s3.amazonaws.com/eks-fargate/cloud9.yaml) and open a new browser tab
 1. Click *Next* again to the stack review page, tick **I acknowledge that AWS CloudFormation might create IAM resources** box and click *Create stack*.
   
-  ![Acknowledge Stack Capabilities](./setup/images/acknowledge-stack-capabilities.png)
+  ![Acknowledge Stack Capabilities](./images/acknowledge-stack-capabilities.png)
 
 4. Wait for a few minutes for stack creation to complete.
 5. Select the stack and note down the outputs (*Cloud9EnvironmentId* & *InstanceProfile*) on *outputs* tab for next step.
 
-  ![Cloud9 Stack Output](./setup/images/stack-cloud9-output.png)
+  ![Cloud9 Stack Output](./images/stack-cloud9-output.png)
 
 ### Step 2 - Assign instance role to Cloud9 instance
 
 1. Launch [AWS EC2 Console](https://console.aws.amazon.com/ec2/v2/home?#Instances).
 2. Use stack output value of *Cloud9EnvironmentId* as filter to find the Cloud9 instance.
 
-  ![Locate Cloud9 Instance](./setup/images/locate-cloud9-instance.png)
+  ![Locate Cloud9 Instance](./images/locate-cloud9-instance.png)
 
 3. Right click the instance, *Security* -> *Modify IAM Role*.
 4. Choose the profile name matches to the *InstanceProfile* value from the stack output, and click *Apply*.
 
-  ![Set Instance Role](./setup/images/set-instance-role.png)
+  ![Set Instance Role](./images/set-instance-role.png)
 
 ### Step 3 - Disable Cloud9 Managed Credentials
 
@@ -49,7 +49,7 @@ In this lab, we will deploy a replica set of NGINX pods on EKS Fargate.
 1. At left menu *AWS SETTINGS*, click *Credentials*.
 1. Disable AWS managed temporary credentials:
 
-  ![Disable Cloud 9 Managed Credentials](./setup/images/disable-cloud9-credentials.png)
+  ![Disable Cloud 9 Managed Credentials](./images/disable-cloud9-credentials.png)
 
 ### Step 4 - Bootstrap lab environment on Cloud9 IDE
 
@@ -57,7 +57,7 @@ Run commands below on Cloud9 Terminal to clone this lab repository and bootstrap
 
 ```
 git clone https://github.com/phonghuule/eks-fargate.git
-cd eks-fargate/setup
+cd eks-fargate
 ./bootstrap.sh
 ```
 
@@ -68,12 +68,12 @@ The *bootstrap.sh* script will:
 - Create an EKS cluster with eksctl.
 - Set up [IAM roles for service accounts](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) for ALB Ingress Controller.
 
-  ![Cloud9 Terminal](./setup/images/cloud9-terminal.png)
+  ![Cloud9 Terminal](./images/cloud9-terminal.png)
 
 Note: If the script is stuck at creating SSH Key Pair, please hit enter, the script will continue
 
 ## Lab
-### Launch The EKS Fargate Cluster Using EKSCTL
+### Step 1 - Launch The EKS Fargate Cluster Using eksctl
 In Cloud 9 environment, open the Terminal, and run the following command:
 
     eksctl create cluster --name=fargate-devlab --alb-ingress-access --region=${AWS_REGION} --fargate --version 1.17
@@ -82,7 +82,7 @@ In Cloud 9 environment, open the Terminal, and run the following command:
 
 Go to the [AWS console → Services → EKS](https://console.aws.amazon.com/eks/home?region=us-east-1#/clusters) and see the cluster that’s been created. 
 You’ll see that there’s a Fargate profile created by default, since we used the “—fargate” flag when using eksctl. One more thing you’ll note is that there are no EC2 instances and that’s because again, we used the "fargate" flag when configuring the EKS cluster with eksctl.
-![fig6.png](./setup/images/fig6.png). 
+![fig6.png](./images/fig6.png). 
 
 Now issue the kubectl get pods command:
 
@@ -120,7 +120,7 @@ kube-system coredns-7dc94799cb-7gjfb 1/1 Running 0 3h21m
 kube-system coredns-7dc94799cb-h2z2t 1/1 Running 0 3h21m
 ```
 
-### Create a Fargate profile ###
+### Step 2 - Create a Fargate profile ###
 
 The [Fargate profile](https://docs.aws.amazon.com/eks/latest/userguide/fargate-profile.html) allows an administrator to declare which pods run on Fargate. Each profile can have up to five selectors that contain a namespace and optional labels. You must define a namespace for every selector. The label field consists of multiple optional key-value pairs. Pods that match a selector (by matching a namespace for the selector and all of the labels specified in the selector) are scheduled on Fargate.
 
@@ -134,15 +134,19 @@ Even though we have created a “fp-default” Fargate profile, we’ll go and c
 
 
 Now go to the console and you’ll see a new “**applications**” Fargate profile being created. Creation may take a few minutes or so.
-![fig7.png](fig7.png)]
+![fig7.png](./images/fig7.png)]
 
 
 When your EKS cluster schedules pods on Fargate, the pods will need to make calls to AWS APIs on your behalf to do things like pull container images from Amazon ECR. The **Fargate Pod Execution Role** provides the IAM permissions to do this. *This IAM role is automatically created for you by the above command.*
 
-Creation of a Fargate profile can take up to several minutes. Execute the following command after the profile creation is completed and you should see output similar to what is shown below.
+Creation of a Fargate profile can take up to several minutes. 
+Execute the following command after the profile creation is completed: 
 
-`eksctl get fargateprofile --cluster fargate-devlab -o yaml`
+```
+eksctl get fargateprofile --cluster fargate-devlab -o yaml`
+```
 
+and you should see output similar to what is shown below:
 
 ```
 - name: applications
@@ -165,22 +169,13 @@ Creation of a Fargate profile can take up to several minutes. Execute the follow
 Notice that the profile includes the private subnets in your EKS cluster. **Pods running on Fargate are not assigned public IP addresses, so only private subnets (with no direct route to an Internet Gateway) are supported when you create a Fargate profile.** Hence, while provisioning an EKS cluster, you must make sure that the VPC that you create contains one or more private subnets. When you create an EKS cluster with [eksctl](http://eksctl.io/) utility (which is what we used), under the hoods it creates a VPC that meets these requirements.
 
 **Deploying Pods to Fargate**
-
-Now, you will deploy the NGINX pods into Fargate by executing the following commands
-
-
-```
-mkdir -p ~/environment/fargate
-cd ~/environment/fargate
-wget https://k8s.io/examples/controllers/nginx-deployment.yaml
-```
-
-
 Lets look at the content of the nginx-deployment.yaml file before we spin up the pods:
 
-
 ```
+cd ~/environment/eks-fargate
 $ cat nginx-deployment.yaml 
+```
+
 ---
 apiVersion: v1
 kind: Namespace
@@ -230,20 +225,25 @@ spec:
   selector:
     app: nginx
 ```
-
-
 **Now apply this deployment:**
-
+```
     kubectl apply -f nginx-deployment.yaml
+```
 
+Check Status:
+```
     kubectl get pods -n fargate -w
 (wait till the pods are in *Running* status)
-
+```
 The first time the pods start, they do take some time due to the “cold start” of fargate pods. Once the pods are in “Ready” status, you can type “ctrl+c”.
 
-
+Execute the command:
 ```
 $ kubectl get pods -n fargate
+```
+
+Expected Output:
+```
 NAME READY STATUS RESTARTS AGE
 nginx-app-57d5474b4b-cjbmq 1/1 Running 0 88s
 nginx-app-57d5474b4b-sf6w7 1/1 Running 0 88s
@@ -263,14 +263,15 @@ that’s only looking at pods in the default namespace.
 
 The deployment for ngnix we deployed creates a service of type NodePort. 
 **Now issue:**
-
+```
     kubectl get nodes
+```
 
 What do you see? 
-
-
 ```
 $ kubectl get nodes
+```
+```
 NAME                                     STATUS   ROLES    AGE    VERSION
 fargate-ip-192-168-77-249.ec2.internal   Ready    <none>   101s   v1.14.8-eks
 fargate-ip-192-168-79-85.ec2.internal    Ready    <none>   83s    v1.14.8-eks
@@ -283,7 +284,7 @@ As you notice, now we see 4 nodes show up, 2 for the coredns pods and two for th
 
 Go to the AWS Console in the EC2 tab and you’ll still not see any nodes provisioned:
 
-![fig8.png](fig8.png)
+![fig8.png](./images/fig8.png)
 Shows the totally serverless nature of EKS Fargate  
 
 

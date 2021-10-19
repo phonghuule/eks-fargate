@@ -1,6 +1,6 @@
 #!/bin/bash
 
-EKS_CLUSTER_NAME=eks-alb-2048game
+EKS_CLUSTER_NAME=fargate-devlab
 
 echo; echo "Clean up Kubernetes resources if haven't:"
 

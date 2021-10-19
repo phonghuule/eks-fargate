@@ -1,6 +1,6 @@
 #!/bin/bash
 
-EKS_CLUSTER_NAME=eks-alb-2048game
+EKS_CLUSTER_NAME=fargate-devlab
 
 # Sync time
 sudo service ntpd stop
