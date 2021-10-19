@@ -168,7 +168,7 @@ and you should see output similar to what is shown below:
 
 Notice that the profile includes the private subnets in your EKS cluster. **Pods running on Fargate are not assigned public IP addresses, so only private subnets (with no direct route to an Internet Gateway) are supported when you create a Fargate profile.** Hence, while provisioning an EKS cluster, you must make sure that the VPC that you create contains one or more private subnets. When you create an EKS cluster with [eksctl](http://eksctl.io/) utility (which is what we used), under the hoods it creates a VPC that meets these requirements.
 
-**Deploying Pods to Fargate**
+### Step 3 - Deploying Pods to Fargate ###
 
 Lets look at the content of the nginx-deployment.yaml file before we spin up the pods, execute the commands below:
 
@@ -231,7 +231,7 @@ spec:
 
 **Now apply this deployment:**
 ```
-    kubectl apply -f nginx-deployment.yaml
+kubectl apply -f nginx-deployment.yaml
 ```
 
 Check Status (wait till the pods are in *Running* status):
@@ -242,7 +242,7 @@ The first time the pods start, they do take some time due to the “cold start�
 
 Execute the command:
 ```
-$ kubectl get pods -n fargate
+kubectl get pods -n fargate
 ```
 
 Expected Output:
@@ -256,7 +256,7 @@ If you were to do just ‘kubectl get pods’, you won’t see any pods show up 
 that’s only looking at pods in the default namespace. 
 
 ```    
-$ kubectl get service -n fargate -o wide
+kubectl get service -n fargate -o wide
 ```
 ```
 NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) AGE SELECTOR
@@ -270,9 +270,6 @@ kubectl get nodes
 ```
 
 What do you see? 
-```
-$ kubectl get nodes
-```
 ```
 NAME                                     STATUS   ROLES    AGE    VERSION
 fargate-ip-192-168-77-249.ec2.internal   Ready    <none>   101s   v1.14.8-eks
@@ -289,48 +286,41 @@ Go to the AWS Console in the EC2 tab and you’ll still not see any nodes provis
 Shows the totally serverless nature of EKS Fargate  
 
 
+### Step 4 - Test The Service ###
+
 Now lets do a curl on the service by going into one of the pods and ensure we can hit the service from the pods. Here are the service details:
 
+Run:
 ```
-$ kubectl get service -n fargate -o wide
+kubectl get service -n fargate -o wide
+```
+Make sure you note down the **IP Address** of the NodePort. 
+```
 NAME TYPE CLUSTER-IP EXTERNAL-IP PORT(S) AGE SELECTOR
 nginx-svc NodePort 10.100.1.116 <none> 80:31237/TCP 93s app=nginx
 ```
 
-Make sure you note down the **IP Address** of the NodePort. 
-
 ```
-$ kubectl get pods -n fargate
+kubectl get pods -n fargate
 ```
 
 Note down the name of one of the fargate pods. In my case, it was **nginx-app-57d5474b4b-cjbmq**. Yours will be different. 
+
+Execute command (remeber to input your POD name)
 
 `kubectl exec -it <YOUR-NGINX-POD-NAME> -n fargate  /bin/bash`
 
 This should get you directly inside the pod, your prompt should change to something like: **root@nginx-app-XXXX**
 
-
 Note down the IP of the service that we issued in the command above.. In our case, it is 10.100.1.116. We’ll curl on this IP:
 
 ```
 root@nginx-app-57d5474b4b-vcnnk:/# curl 10.100.1.116
-bash: curl: command not found
 ```
 
-You’ll realize that the curl utility is not available on this pod. So we’ll need to download and install it. Issue the following commands:
+You’ll see the nginx page show up. 
 
-```
-root@nginx-app-57d5474b4b-vcnnk:/# apt-get update
-root@nginx-app-57d5474b4b-vcnnk:/# apt-get install curl
-```
-
-Answer “Y” to any question asked
-
-Now issue the curl on the service and you’ll see the nginx page show up. 
-
-
-```bash
-root@nginx-app-57d5474b4b-vcnnk:/# curl 10.100.1.116                                                                                                          
+```       
 <!DOCTYPE html>
 <html>
 <head>
@@ -358,29 +348,47 @@ Commercial support is available at
 </html>
 ```
 
+Now **exit** the pod before doing the cleanup by running:
+```
+exit
+``` 
 
-Hopefully you benefited from this lab and got an understanding of how EKS Fargate works. If you have time, you can follow this blog and spin up an alb-ingress controller with Fargate:
-
-https://aws.amazon.com/blogs/containers/using-alb-ingress-controller-with-amazon-eks-on-fargate/
-
-
-Now **exit** the pod before doing the cleanup. 
-
-**CLEANUP:**
+## Clean Up
 
 Please follow these steps in order to ensure all your resources used are deleted after you complete the lab. 
 
-* DELETE THE EKS CLUSTER: Issue the following command from Cloud9 IDE:
+### Step 1
+Run *cleanup.sh* from Cloud 9 Terminal to delete EKS cluster and its resources. Cleanup script will:
 
-`eksctl delete cluster fargate-devlab`
+- Delete all the resources installed in previous steps.
+- Delete the EKS cluster created via bootstrap script.
+```
+cd cd ~/environment/eks-fargate/setup
+./cleanup.sh
+```
 
-* DELETE THE CLOUD9 IDE: 
-    * Go to **Services →  CloudFormation → Stacks** and delete the stack created by **cloud9** beginning with “aws-cloud9-EKS-Fargate-DevLab-...”delete keypair
-* DELETE THE EC2 KEYPAIR YOU CREATED: 
-    * Go to Services → EC2 → Keypairs (Under Network and Security)
-    * Delete “fargatedevlab” keypair. 
-* DELETE THE IAM ROLE YOU CREATED:
-    * Go to Services → IAM → Roles
-    * Search for “fargatedevlab-admin” role
-    * Click on the role and click “Delete role” button in the top right corner.
+### Step 2
 
+Double check the EKS Cluster stack created by eksctl was deleted:
+
+- Launch [AWS CloudFormation Console](https://console.aws.amazon.com/cloudformation/home)
+- Check if the stack **eksctl-fargate-devlab-cluster** still exists.
+- If exists, click this stack, in the stack details pane, choose *Delete*.
+- Select *Delete* stack when prompted.
+
+### Step 3
+
+Delete the Cloud 9 CloudFormation stack named **EKS-Fargate** from AWS Console:
+
+- Launch [AWS CloudFormation Console](https://console.aws.amazon.com/cloudformation/home)
+- Select stack **EKS-Fargate**.
+- In the stack details pane, choose *Delete*.
+- Select *Delete* stack when prompted.
+
+## Reference
+Hopefully you benefited from this lab and got an understanding of how EKS Fargate works. If you have time, you can follow this blog and spin up an alb-ingress controller with Fargate:
+https://aws.amazon.com/blogs/containers/using-alb-ingress-controller-with-amazon-eks-on-fargate/
+
+## Survey
+Please help us to provide your feedback [here](https://amazonmr.au1.qualtrics.com/jfe/form/SV_6x7UgBL9FHn59dA?Session=HOL5).
+Participants who complete the surveys from AWS Innovate Online Conference - Modern Applications Edition will receive a gift code for USD25 in AWS credits. AWS credits will be sent via email by 30 November, 2021.s
