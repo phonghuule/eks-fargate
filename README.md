@@ -363,7 +363,7 @@ Run *cleanup.sh* from Cloud 9 Terminal to delete EKS cluster and its resources. 
 - Delete all the resources installed in previous steps.
 - Delete the EKS cluster created via bootstrap script.
 ```
-cd cd ~/environment/eks-fargate/setup
+cd ~/environment/eks-fargate/setup
 ./cleanup.sh
 ```
 
