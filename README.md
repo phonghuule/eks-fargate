@@ -19,7 +19,7 @@ In this lab, we will deploy a replica set of NGINX pods on EKS Fargate.
 ### Step 1 - Create Cloud9 environment via AWS CloudFormation
 
 1. Log in your AWS Account
-1. Click [this link](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=EKS-Fargate&templateURL=https://aws-innovate-modern-applications.s3.amazonaws.com/eks-fargate/cloud9.yaml) and open a new browser tab
+1. Click [this link](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=EKS-Fargate&templateURL=https://aws-innovate-modern-applications.s3.amazonaws.com/eks-fargate/cloud9.yaml) and open a new browser tab
 1. Click *Next* again to the stack review page, tick **I acknowledge that AWS CloudFormation might create IAM resources** box and click *Create stack*.
   
   ![Acknowledge Stack Capabilities](./images/acknowledge-stack-capabilities.png)
@@ -43,7 +43,7 @@ In this lab, we will deploy a replica set of NGINX pods on EKS Fargate.
 
 ### Step 3 - Disable Cloud9 Managed Credentials
 
-1. Launch [AWS Cloud9 Console](https://console.aws.amazon.com/cloud9/home?region=us-east-1#)
+1. Launch [AWS Cloud9 Console](https://console.aws.amazon.com/cloud9/home?region=us-west-2#)
 1. Locate the Cloud9 environment created for this lab and click "Open IDE". The environment title should start with *EKSCloud9*.
 1. At top menu of Cloud9 IDE, click *AWS Cloud9* and choose *Preferences*.
 1. At left menu *AWS SETTINGS*, click *Credentials*.
@@ -80,7 +80,7 @@ In Cloud 9 environment, open the Terminal, and run the following command:
 
 **[Note: Spinning the cluster can take up to 15 minutes]**
 
-Go to the [AWS console → Services → EKS](https://console.aws.amazon.com/eks/home?region=us-east-1#/clusters) and see the cluster that’s been created. 
+Go to the [AWS console → Services → EKS](https://console.aws.amazon.com/eks/home?region=us-west-2#/clusters) and see the cluster that’s been created. 
 You’ll see that there’s a Fargate profile created by default, since we used the “—fargate” flag when using eksctl. One more thing you’ll note is that there are no EC2 instances and that’s because again, we used the "fargate" flag when configuring the EKS cluster with eksctl.
 ![fig6.png](./images/fig6.png). 
 
@@ -94,7 +94,8 @@ Expected Output:
 ```
 
 As expected, you won’t see any pods since we haven’t spun up anything. 
-If you go in the [EC2 console](https://console.aws.amazon.com/ec2/v2/home?region=us-east-1#Instances:instanceState=running), you won’t see any instances, however when you execute the command:
+If you go in the [EC2 console](https://console.aws.amazon.com/ec2/v2/home?region=us-west
+-2#Instances:instanceState=running), you won’t see any instances, however when you execute the command:
 ```
   kubectl get nodes
 ```
